@@ -27,4 +27,4 @@ jobs:
         run: python -m pytest -q
 
       - name: Run activation smoke path
-        run: rules-system-bound demo --json
+        run: rules-system-bound --json

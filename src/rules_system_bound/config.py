@@ -26,7 +26,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 
 
 def _coerce_env_value(value: str, default: Any) -> Any:
-    """Coerce environment strings to the default value's type."""
+    """Coerce environment strings to the matching default value type."""
     if isinstance(default, bool):
         normalized = value.strip().lower()
         if normalized in {"1", "true", "yes", "on"}:
