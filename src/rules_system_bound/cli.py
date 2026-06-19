@@ -124,7 +124,6 @@ def build_demo_report() -> dict[str, Any]:
         },
     }
 
-
 def _print_report(report: dict[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(report, indent=2, sort_keys=True))

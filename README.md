@@ -92,6 +92,23 @@ Three types that co-constitute with real systems:
 - **WEBERIAN**: Essential function captured
 - **NORMALIZED**: Representation of real instances
 
+## Runnable Evidence
+
+From a checkout, the activation smoke path is:
+
+```bash
+PYTHONPATH=src python3 -m rules_system_bound --json
+```
+
+After installation, the release path is:
+
+```bash
+rules-system-bound --json
+```
+
+See [docs/activation-audit.md](docs/activation-audit.md) for the audit receipt
+and the exact install/test commands.
+
 ## Configuration
 
 Copy `.env.template` to `.env` and customize:

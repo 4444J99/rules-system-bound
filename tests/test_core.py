@@ -202,6 +202,7 @@ class TestConfig:
         assert config.container_function == "custom_func"
         assert config.domain_family == "social"
 
+<<<<<<< HEAD
 
 class TestActivationCli:
     """Tests for the documented activation smoke path."""
@@ -233,6 +234,7 @@ class TestActivationCli:
     def test_config_from_env_preserves_types(self, monkeypatch):
         """Environment values are coerced into config field types."""
         from rules_system_bound.config import Config
+
         monkeypatch.setenv("CONTAINMENT_FUNCTION_WEIGHT", "0.7")
         monkeypatch.setenv("LEVEL_NAMES_EMERGE", "false")
 
@@ -240,3 +242,30 @@ class TestActivationCli:
 
         assert config.containment_function_weight == 0.7
         assert config.level_names_emerge is False
+
+
+class TestActivationCli:
+    """Tests for the documented activation smoke path."""
+
+    def test_activation_report_exercises_public_api(self):
+        """Activation report provides deterministic runnable evidence."""
+        from rules_system_bound.cli import build_demo_report
+
+        report = build_demo_report()
+
+        assert report["package"] == "rules-system-bound"
+        assert report["containment"]["can_contain"] is True
+        assert report["containment"]["lineage"] == ["bounded-rule", "theory-root"]
+        assert len(report["interactions"]) == 3
+        assert report["idealization"]["co_constitutive"] is True
+
+    def test_cli_json_output(self, capsys):
+        """CLI emits machine-readable activation evidence."""
+        from rules_system_bound.cli import main
+
+        exit_code = main(["demo", "--json"])
+        output = capsys.readouterr().out
+        report = json.loads(output)
+
+        assert exit_code == 0
+        assert report["containment"]["score"] == 1.0
