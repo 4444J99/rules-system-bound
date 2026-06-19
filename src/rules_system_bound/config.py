@@ -25,6 +25,22 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 
 
+def _coerce_env_value(value: str, default: Any) -> Any:
+    """Coerce environment strings to the default value's type."""
+    if isinstance(default, bool):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+        raise ValueError(f"Invalid boolean value: {value!r}")
+    if isinstance(default, float):
+        return float(value)
+    if isinstance(default, int):
+        return int(value)
+    return value
+
+
 @dataclass
 class Config:
     """Configuration for the Living Container Framework."""
@@ -57,19 +73,8 @@ class Config:
         config: dict[str, Any] = {}
         for key, default in DEFAULT_CONFIG.items():
             env_key = f"{key.upper()}"
-            val = os.getenv(env_key)
-            if val is not None:
-                if isinstance(default, bool):
-                    config[key] = val.lower() in ("1", "true", "yes", "on")
-                elif isinstance(default, float):
-                    try:
-                        config[key] = float(val)
-                    except ValueError:
-                        config[key] = default
-                else:
-                    config[key] = val
-            else:
-                config[key] = default
+            value = os.getenv(env_key)
+            config[key] = default if value is None else _coerce_env_value(value, default)
         return cls(**config)
 
     @classmethod
