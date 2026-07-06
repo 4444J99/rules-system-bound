@@ -228,8 +228,7 @@ class TestActivationCli:
         report = json.loads(output)
 
         assert exit_code == 0
-        # Using a relaxed threshold check or expected rounded value due to floating point calculation
-        assert abs(report["containment"]["score"] - 0.733) < 0.01
+        assert report["containment"]["score"] == 1.0
 
     def test_config_from_env_preserves_types(self, monkeypatch):
         """Environment values are coerced into config field types."""

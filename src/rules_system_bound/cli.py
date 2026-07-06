@@ -47,7 +47,7 @@ def build_demo_report() -> dict[str, Any]:
     """Run a deterministic containment and interaction demonstration."""
     root = Container(
         id="theory-root",
-        function="orient",
+        function="govern",
         purpose="bounds conceptual systems",
         boundary="porous",
         properties={"scale_range": (0.0, 100.0)},
