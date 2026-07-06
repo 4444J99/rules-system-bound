@@ -11,6 +11,11 @@ authors = [
 
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/organvm-i-theoria/rules-system-bound"
+Repository = "https://github.com/organvm-i-theoria/rules-system-bound"
+Issues = "https://github.com/organvm-i-theoria/rules-system-bound/issues"
+
 [project.scripts]
 rules-system-bound = "rules_system_bound.cli:main"
 
@@ -32,3 +37,4 @@ target-version = "py310"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+pythonpath = ["src"]
