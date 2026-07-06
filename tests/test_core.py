@@ -221,7 +221,6 @@ class TestActivationCli:
     def test_cli_json_output(self, capsys):
         """CLI emits machine-readable activation evidence."""
         from rules_system_bound.cli import main
-        import json
 
         exit_code = main(["demo", "--json"])
         output = capsys.readouterr().out
