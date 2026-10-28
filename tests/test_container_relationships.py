@@ -113,6 +113,21 @@ def test_readd_via_direct_list_detaches_old_parent():
     assert child.get_lineage() == [child, new_parent]
 
 
+def test_children_graph_cycle_rejected_and_state_unchanged():
+    # Second CodeRabbit review on PR #19: a directly-constructed list
+    # (parent lists child, child.parent unset) must not let
+    # child.add_child(parent) close a cycle in the children lists.
+    child = make("ch")
+    parent = Container(id="p", function="f", purpose="p", children=[child])
+    with pytest.raises(ValueError):
+        child.add_child(parent)
+    assert parent.parent is None
+    assert parent.children == [child]
+    assert child.parent is None
+    assert child.children == []
+    assert parent.get_descendants() == [child]
+
+
 def test_normal_lineage_and_descendants_with_unrelated_unchanged():
     root = make("root")
     child1, child2 = make("c1"), make("c2")

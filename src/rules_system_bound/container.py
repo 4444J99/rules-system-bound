@@ -56,7 +56,13 @@ class Container:
         Rejects, before any mutation, adding a container to itself or
         to one of its own descendants (either would create a cycle,
         since the child is then an ancestor of this container), raising
-        a deterministic ``ValueError`` with both trees unchanged.
+        a deterministic ``ValueError`` with both trees unchanged. The
+        check covers both directions: the parent-pointer chain above
+        this container, and the children graph below the candidate
+        child — a directly-supplied children list can claim a
+        descendant relationship the parent pointers do not show, and
+        adding it back would close a cycle in the children lists even
+        though the pointers look acyclic.
 
         Re-adding the same child object is a no-op, never a duplicate —
         except that it still reconciles the child's parent pointer: a
@@ -79,6 +85,20 @@ class Container:
             if current is child:
                 raise ValueError("adding an ancestor as a child would create a cycle")
             current = current.parent
+        # Children-graph direction: reject if this container is reachable
+        # from the candidate child's children lists. The seen set keeps
+        # the walk terminating even on an already-cyclic supplied graph.
+        pending = [child]
+        seen: set[int] = set()
+        while pending:
+            node = pending.pop()
+            if node is self:
+                raise ValueError("adding an ancestor as a child would create a cycle")
+            marker = id(node)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            pending.extend(node.children)
         old_parent = child.parent
         if old_parent is not None and old_parent is not self:
             old_parent.children = [e for e in old_parent.children if e is not child]
