@@ -88,6 +88,31 @@ def test_envelops_uses_identity_not_dataclass_equality():
     assert not parent.envelops(twin)
 
 
+def test_readd_reconciles_parent_when_children_list_supplied_directly():
+    # CodeRabbit review on PR #19: a directly-constructed children list
+    # can leave child.parent unset while membership claims otherwise.
+    child = make("ch")
+    parent = Container(id="p", function="f", purpose="p", children=[child])
+    assert child.parent is None
+    parent.add_child(child)
+    assert parent.children == [child]
+    assert child.parent is parent
+    assert child.get_lineage() == [child, parent]
+
+
+def test_readd_via_direct_list_detaches_old_parent():
+    # Same construction path, but the pointer names another parent that
+    # still lists the child: re-adding must move it, not duplicate it.
+    old_parent, child = make("p1"), make("ch")
+    old_parent.add_child(child)
+    new_parent = Container(id="p2", function="f", purpose="p", children=[child])
+    new_parent.add_child(child)
+    assert old_parent.children == []
+    assert new_parent.children == [child]
+    assert child.parent is new_parent
+    assert child.get_lineage() == [child, new_parent]
+
+
 def test_normal_lineage_and_descendants_with_unrelated_unchanged():
     root = make("root")
     child1, child2 = make("c1"), make("c2")

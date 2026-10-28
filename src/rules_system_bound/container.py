@@ -58,7 +58,11 @@ class Container:
         since the child is then an ancestor of this container), raising
         a deterministic ``ValueError`` with both trees unchanged.
 
-        Re-adding the same child object is a no-op, never a duplicate.
+        Re-adding the same child object is a no-op, never a duplicate —
+        except that it still reconciles the child's parent pointer: a
+        children list supplied directly at construction can leave the
+        pointer unset or pointing elsewhere, so the pointer is set to
+        this container even when the child is already listed here.
 
         Moving a child from another parent atomically reparents it:
         it is detached from the previous parent's children list and
@@ -75,13 +79,12 @@ class Container:
             if current is child:
                 raise ValueError("adding an ancestor as a child would create a cycle")
             current = current.parent
-        if any(existing is child for existing in self.children):
-            return
         old_parent = child.parent
         if old_parent is not None and old_parent is not self:
             old_parent.children = [e for e in old_parent.children if e is not child]
         child.parent = self
-        self.children.append(child)
+        if not any(existing is child for existing in self.children):
+            self.children.append(child)
 
     def remove_child(self, child: Container) -> None:
         """Remove a child container.
