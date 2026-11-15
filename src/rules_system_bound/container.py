@@ -39,23 +39,87 @@ class Container:
         return rules.check_containment(self, other)
 
     def envelops(self, other: Container) -> bool:
-        """Check if this container envelops another."""
-        return other in self.children
+        """Check if this container envelops another.
+
+        Membership is by object identity, not dataclass equality: a
+        distinct but equal-valued container is not enveloped here.
+        """
+        return any(existing is other for existing in self.children)
 
     def enveloped_by(self) -> Optional[Container]:
         """Get the container that envelops this one."""
         return self.parent
 
     def add_child(self, child: Container) -> None:
-        """Add a child container."""
+        """Add a child container.
+
+        Rejects, before any mutation, adding a container to itself or
+        to one of its own descendants (either would create a cycle,
+        since the child is then an ancestor of this container), raising
+        a deterministic ``ValueError`` with both trees unchanged. The
+        check covers both directions: the parent-pointer chain above
+        this container, and the children graph below the candidate
+        child — a directly-supplied children list can claim a
+        descendant relationship the parent pointers do not show, and
+        adding it back would close a cycle in the children lists even
+        though the pointers look acyclic.
+
+        Re-adding the same child object is a no-op, never a duplicate —
+        except that it still reconciles the child's parent pointer: a
+        children list supplied directly at construction can leave the
+        pointer unset or pointing elsewhere, so the pointer is set to
+        this container even when the child is already listed here.
+
+        Moving a child from another parent atomically reparents it:
+        it is detached from the previous parent's children list and
+        attached here, so the child has exactly one parent and appears
+        in exactly one parent's children list afterwards. This is the
+        explicit reparenting behaviour; rejection without mutation is
+        not used, so existing ``add_child`` callers that move a child
+        keep working with a consistent tree instead of a stale one.
+        """
+        if child is self:
+            raise ValueError("a container cannot be its own child")
+        current = self.parent
+        while current is not None:
+            if current is child:
+                raise ValueError("adding an ancestor as a child would create a cycle")
+            current = current.parent
+        # Children-graph direction: reject if this container is reachable
+        # from the candidate child's children lists. The seen set keeps
+        # the walk terminating even on an already-cyclic supplied graph.
+        pending = [child]
+        seen: set[int] = set()
+        while pending:
+            node = pending.pop()
+            if node is self:
+                raise ValueError("adding an ancestor as a child would create a cycle")
+            marker = id(node)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            pending.extend(node.children)
+        old_parent = child.parent
+        if old_parent is not None and old_parent is not self:
+            old_parent.children = [e for e in old_parent.children if e is not child]
         child.parent = self
-        self.children.append(child)
+        if not any(existing is child for existing in self.children):
+            self.children.append(child)
 
     def remove_child(self, child: Container) -> None:
-        """Remove a child container."""
-        if child in self.children:
-            self.children.remove(child)
-            child.parent = None
+        """Remove a child container.
+
+        Removal is by object identity, not dataclass equality: removing
+        a distinct but equal-valued container must not detach the real
+        child, and must not clear the real child's parent pointer.
+        Removing a container that is not a child here is a no-op.
+        """
+        for index, existing in enumerate(self.children):
+            if existing is child:
+                del self.children[index]
+                if child.parent is self:
+                    child.parent = None
+                return
 
     def get_lineage(self) -> list[Container]:
         """Get the full lineage from this container to the top."""
