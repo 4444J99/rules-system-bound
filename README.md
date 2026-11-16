@@ -16,6 +16,8 @@ The Living Container Framework provides rules for:
 ```bash
 git clone https://github.com/organvm-i-theoria/rules-system-bound.git
 cd rules-system-bound
+python3 -m venv .venv
+source .venv/bin/activate
 python3 -m pip install -e ".[dev]"
 ```
 
@@ -24,6 +26,8 @@ The package also installs a console script:
 ```bash
 rules-system-bound --json
 ```
+
+This installs the `rules-system-bound` console command.
 
 ## Quick Start
 
@@ -59,13 +63,14 @@ From a checkout, the activation smoke path is:
 PYTHONPATH=src python3 -m rules_system_bound --json
 ```
 
-After installation, the release path is:
+Or run the installed console command (the release path after installation):
 
 ```bash
 rules-system-bound --json
 ```
 
-See [docs/activation-audit.md](docs/activation-audit.md) for the audit receipt
+The command returns `status: ok` when the containment and interaction paths are
+runnable. See [docs/activation-audit.md](docs/activation-audit.md) for the audit receipt
 and the exact install/test commands.
 
 ## Core Concepts

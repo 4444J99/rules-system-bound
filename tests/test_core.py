@@ -1,6 +1,10 @@
 """Tests for rules-system-bound."""
 
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 from rules_system_bound import (
     Container,
@@ -12,6 +16,9 @@ from rules_system_bound import (
     InteractionEmergence,
     Config,
 )
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestContainer:
@@ -253,3 +260,25 @@ class TestActivationCli:
 
         assert "relates to framework" in output
         assert "co-constitutes framework" not in output
+
+    def test_module_entrypoint_outputs_json(self):
+        """Module entrypoint works from a source checkout."""
+        env = os.environ.copy()
+        src_path = str(REPO_ROOT / "src")
+        env["PYTHONPATH"] = (
+            src_path
+            if not env.get("PYTHONPATH")
+            else f"{src_path}{os.pathsep}{env['PYTHONPATH']}"
+        )
+
+        result = subprocess.run(
+            [sys.executable, "-m", "rules_system_bound", "--json"],
+            cwd=REPO_ROOT,
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        report = json.loads(result.stdout)
+
+        assert report["status"] == "runnable"
