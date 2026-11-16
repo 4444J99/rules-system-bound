@@ -16,7 +16,6 @@ from rules_system_bound import (
     InteractionEmergence,
     Config,
 )
-from rules_system_bound.cli import build_activation_report, main
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -210,27 +209,57 @@ class TestConfig:
         assert config.container_function == "custom_func"
         assert config.domain_family == "social"
 
+    def test_config_from_env_preserves_types(self, monkeypatch):
+        """Environment values are coerced into config field types."""
+        from rules_system_bound.config import Config
+        monkeypatch.setenv("CONTAINMENT_FUNCTION_WEIGHT", "0.7")
+        monkeypatch.setenv("LEVEL_NAMES_EMERGE", "false")
+
+        config = Config.from_env()
+
+        assert config.containment_function_weight == 0.7
+        assert config.level_names_emerge is False
+
 
 class TestActivationCli:
-    """Tests for the executable activation surface."""
+    """Tests for the documented activation smoke path."""
 
-    def test_activation_report_passes(self):
-        """Activation report proves containment and interaction paths."""
-        report = build_activation_report()
+    def test_activation_report_exercises_public_api(self):
+        """Activation report provides deterministic runnable evidence."""
+        from rules_system_bound.cli import activation_report
 
-        assert report["status"] == "ok"
-        assert report["checks"]["containment"] is True
-        assert report["checks"]["interaction_count"] > 0
+        report = activation_report()
 
-    def test_cli_outputs_json(self, capsys):
-        """CLI can emit machine-readable activation evidence."""
+        assert report["package"] == "rules-system-bound"
+        assert report["status"] == "runnable"
+        assert report["containment"]["can_contain"] is True
+        assert report["containment"]["lineage"] == ["bounded-system", "framework"]
+        assert len(report["interactions"]) == 3
+        assert report["idealization"]["co_constitutive"] is True
+
+    def test_cli_json_output(self, capsys):
+        """CLI emits machine-readable activation evidence."""
+        from rules_system_bound.cli import main
+
         exit_code = main(["--json"])
         output = capsys.readouterr().out
         report = json.loads(output)
 
         assert exit_code == 0
-        assert report["package"] == "rules-system-bound"
-        assert report["status"] == "ok"
+        assert report["exec_path"]["after_install"] == "rules-system-bound --json"
+        assert report["containment"]["score"] == 1.0
+
+    def test_render_text_respects_co_constitutive_flag(self):
+        """Human output reflects the relation flag in the report."""
+        from rules_system_bound.cli import activation_report, render_text
+
+        report = activation_report()
+        report["idealization"]["co_constitutive"] = False
+
+        output = render_text(report)
+
+        assert "relates to framework" in output
+        assert "co-constitutes framework" not in output
 
     def test_module_entrypoint_outputs_json(self):
         """Module entrypoint works from a source checkout."""
@@ -252,4 +281,4 @@ class TestActivationCli:
         )
         report = json.loads(result.stdout)
 
-        assert report["status"] == "ok"
+        assert report["status"] == "runnable"
